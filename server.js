@@ -7,7 +7,32 @@ const pool = require("./db");
 const app = express();
 app.use(cors());
 
-// ADD THIS
+// ⭐ ADD THIS FUNCTION (auto create tables if missing)
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS products(
+      id BIGINT PRIMARY KEY,
+      title TEXT,
+      price NUMERIC,
+      category TEXT,
+      tags TEXT,
+      image TEXT,
+      popularity INT DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS views(
+      user_id TEXT,
+      product_id BIGINT,
+      viewed_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  console.log("DB Ready");
+}
+initDB();
+// ⭐ END
+// ---------------------------------------------
+
 app.get("/", (req, res) => {
   res.send("AI Recommendation Backend Running");
 });
