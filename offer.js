@@ -25,8 +25,8 @@ async function offer(product_id, user_id) {
     };
   }
 
-  // Badminton category = 15% discount
-  if (product.category === "Badminton") {
+  // T-shirts category = 15% discount
+  if (product.category === "tshirts") {
     return {
       offer: true,
       discount: "15%"
