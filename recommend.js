@@ -1,21 +1,22 @@
 const pool = require("./db");
 
 async function recommend(product_id) {
-  // 1️⃣ Get product
+
+  // 1️⃣ Fetch category for given product
   const prod = await pool.query(
     "SELECT category FROM products WHERE id=$1",
     [product_id]
   );
 
-  // 2️⃣ If product not found → prevent crash
+  // 2️⃣ If no product found → prevent crash!
   if (prod.rows.length === 0) {
-    console.error("Product not found for ID:", product_id);
-    return [];  // return empty list instead of crashing
+    console.log("⚠️ No product found for ID:", product_id);
+    return [];  // return empty instead of crashing
   }
 
   const category = prod.rows[0].category;
 
-  // 3️⃣ Fetch recommendations
+  // 3️⃣ Fetch recommended products
   const rec = await pool.query(
     "SELECT id, title, price, image FROM products WHERE category=$1 AND id!=$2 LIMIT 6",
     [category, product_id]
