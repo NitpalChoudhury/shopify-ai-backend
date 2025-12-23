@@ -10,15 +10,15 @@ const app = express();
 // ⭐ ALLOW SHOPIFY ORIGINS
 // -------------------------
 const allowedOrigins = [
-  "https://8h0pa-60.myshopify.com",        // 👉 Replace with your real store domain
+  "https://8h0pa-60.myshopify.com",   // YOUR LIVE SHOPIFY THEME DOMAIN
   "https://admin.shopify.com",
-  "https://shopify-ai-backend-syyq-nitpal-choudhurys-projects.vercel.app" // your backend URL
+  "https://shopify-ai-backend-syyq-nitpal-choudhurys-projects.vercel.app" // backend url
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow mobile / curl
+      if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -30,6 +30,7 @@ app.use(
     allowedHeaders: ["Content-Type"],
   })
 );
+
 
 // -------------------------
 // ⭐ Fix CORS for Shopify Sandbox
