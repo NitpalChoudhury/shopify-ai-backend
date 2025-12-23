@@ -7,6 +7,10 @@ const pool = require("./db");
 const app = express();
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.send("AI Recommendation Backend Running");
+});
+
 app.get("/recommend", async (req,res)=>{
   const data = await recommend(req.query.pid);
   res.json(data);
@@ -19,12 +23,12 @@ app.get("/offer", async (req,res)=>{
 
 app.get("/track", async (req,res)=>{
   await pool.query(
-    "INSERT INTO views(user_id,product_id) VALUES($1,$2)",
+    "INSERT INTO views(user_id, product_id) VALUES($1,$2)",
     [req.query.user, req.query.pid]
   );
-  res.json({success:true});
+  res.json({ success: true });
 });
 
-app.listen(process.env.PORT, ()=>{
-  console.log("server running");
-});
+// ❌ app.listen() hatao
+// ✔️ yeh likho
+module.exports = app;
