@@ -15,9 +15,9 @@ async function offer(product_id, user_id) {
   const product = prod.rows[0];
 
   // 2️⃣ Simple AI-style logic
-  // rule: 20% chance user gets offer
   const chance = Math.random();
 
+  // 20% chance = Random AI-like special offer
   if (chance < 0.20) {  
     return {
       offer: true,
@@ -25,7 +25,7 @@ async function offer(product_id, user_id) {
     };
   }
 
-  // rule: category-specific offer
+  // Badminton category = 15% discount
   if (product.category === "Badminton") {
     return {
       offer: true,
@@ -33,7 +33,7 @@ async function offer(product_id, user_id) {
     };
   }
 
-  // rule: expensive products get 10% off
+  // Expensive products = 10% off
   if (Number(product.price) > 1000) {
     return {
       offer: true,
@@ -41,7 +41,7 @@ async function offer(product_id, user_id) {
     };
   }
 
-  // 3️⃣ Default: no offer
+  // Default no offer
   return {
     offer: false,
     discount: "0%"
