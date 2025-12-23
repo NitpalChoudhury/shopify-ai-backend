@@ -7,16 +7,26 @@ const pool = require("./db");
 const app = express();
 
 // ⭐ ALLOW SHOPIFY FRONTEND ⭐
+const allowedOrigins = [
+  "https://anxsus.com",
+  "https://www.anxsus.com",
+  "https://8h0qpa-60.myshopify.com",
+  "https://admin.shopify.com"
+];
+
 app.use(cors({
-  origin: [
-    "https://anxsus.com",
-    "https://www.anxsus.com",
-    "https://8h0qpa-60.myshopify.com",
-    "https://*.shopify.com",
-    "https://*.myshopify.com"
-  ],
+  origin: function(origin, callback){
+    console.log("CORS check:", origin);
+
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".myshopify.com")) {
+      callback(null, true);
+    } else {
+      console.log("❌ Blocked by CORS:", origin);
+      callback(new Error("CORS Not Allowed: " + origin));
+    }
+  },
   methods: ["GET"],
-  allowedHeaders: ["Content-Type"],
+  allowedHeaders: ["Content-Type"]
 }));
 
 
