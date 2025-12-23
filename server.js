@@ -7,6 +7,11 @@ const pool = require("./db");
 const app = express();
 app.use(cors());
 
+// ADD THIS
+app.get("/", (req, res) => {
+  res.send("AI Recommendation Backend Running");
+});
+
 app.get("/recommend", async (req,res)=>{
   const data = await recommend(req.query.pid);
   res.json(data);
