@@ -35,13 +35,15 @@ async function offer(pid, user) {
   const code = `ANXSUS${Math.floor(Math.random() * 999999)}`;
 
   // 5) Create coupon in Shopify
-  const api = axios.create({
+ const api = axios.create({
   baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}/`,
   headers: {
     "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_PASSWORD,
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Accept": "application/json"
   }
 });
+
 
 
   // Price rule
