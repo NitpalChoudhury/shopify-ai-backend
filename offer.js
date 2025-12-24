@@ -1,22 +1,23 @@
 const pool = require("./db");
 
 async function offer(product_id, user_id) {
-  const prod = await pool.query(
+
+  const result = await pool.query(
     "SELECT has_offer, discount FROM products WHERE id=$1",
     [product_id]
   );
 
-  if (prod.rows.length === 0) {
+  if (result.rows.length === 0) {
     return { offer: false, discount: "0%" };
   }
 
-  const { has_offer, discount } = prod.rows[0];
+  const data = result.rows[0];
 
-  if (!has_offer || discount === 0) {
-    return { offer: false, discount: "0%" };
+  if (data.has_offer) {
+    return { offer: true, discount: data.discount + "%" };
   }
 
-  return { offer: true, discount: `${discount}%` };
+  return { offer: false, discount: "0%" };
 }
 
 module.exports = offer;
