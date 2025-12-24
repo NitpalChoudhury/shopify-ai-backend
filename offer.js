@@ -26,6 +26,9 @@ async function offer(pid, user) {
 
   // 2) Fetch product price
   const prod = await pool.query("SELECT price FROM products WHERE id=$1", [pid]);
+  if (!prod.rows.length) {
+    return { error: "Product not found" };
+  }
   const price = parseInt(prod.rows[0].price);
 
   // 3) AI logic → calculate discount
@@ -36,20 +39,19 @@ async function offer(pid, user) {
 
   // 5) Shopify Admin API axios instance
   const api = axios.create({
-    baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}/`,
+    baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}`,
     headers: {
-      "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_PASSWORD,
+      "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_ACCESS_TOKEN,
       "Content-Type": "application/json",
       "Accept": "application/json"
-    },
-    timeout: 10000
+    }
   });
 
-  // ➤ Create PRICE RULE
-  const ruleRes = await api.post("price_rules.json", {
+  // ⭐ Correct PRICE RULE creation
+  const ruleRes = await api.post(`/price_rules.json`, {
     price_rule: {
       title: code,
-      value_type: "percentage",
+      value_type: "percent",        // FIXED
       value: `-${discount}`,
       customer_selection: "all",
       target_type: "line_item",
@@ -62,8 +64,8 @@ async function offer(pid, user) {
 
   const ruleId = ruleRes.data.price_rule.id;
 
-  // ➤ Create DISCOUNT CODE
-  const codeRes = await api.post(`price_rules/${ruleId}/discount_codes.json`, {
+  // ⭐ Create DISCOUNT CODE
+  const codeRes = await api.post(`/price_rules/${ruleId}/discount_codes.json`, {
     discount_code: { code }
   });
 
