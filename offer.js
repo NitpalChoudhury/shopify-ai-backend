@@ -28,49 +28,48 @@ async function offer(pid, user) {
   const prod = await pool.query("SELECT price FROM products WHERE id=$1", [pid]);
   const price = parseInt(prod.rows[0].price);
 
-  // 3) AI logic → Calculate discount
-  let discount = 30; // can put your AI logic here
+  // 3) AI logic → calculate discount
+  let discount = 30;
 
   // 4) Generate unique code
   const code = `ANXSUS${Math.floor(Math.random() * 999999)}`;
 
-  // 5) Create coupon in Shopify
- const api = axios.create({
-  baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}/`,
-  headers: {
-    "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_PASSWORD,
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-  }
-});
+  // 5) Shopify Admin API axios instance
+  const api = axios.create({
+    baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}/`,
+    headers: {
+      "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_PASSWORD,
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    timeout: 10000
+  });
 
-
-
-  // Price rule
-  const rule = await api.post("/price_rules.json", {
+  // ➤ Create PRICE RULE
+  const ruleRes = await api.post("price_rules.json", {
     price_rule: {
       title: code,
-      value_type: "percent",
+      value_type: "percentage",
       value: `-${discount}`,
       customer_selection: "all",
       target_type: "line_item",
       target_selection: "all",
       allocation_method: "across",
       starts_at: now.toISOString(),
-      ends_at: new Date(now.getTime() + 15 * 60000).toISOString()
+      ends_at: new Date(now.getTime() + 15 * 60000).toISOString(),
     }
   });
 
-  const ruleId = rule.data.price_rule.id;
+  const ruleId = ruleRes.data.price_rule.id;
 
-  // Discount code
-  const dcode = await api.post(`/price_rules/${ruleId}/discount_codes.json`, {
+  // ➤ Create DISCOUNT CODE
+  const codeRes = await api.post(`price_rules/${ruleId}/discount_codes.json`, {
     discount_code: { code }
   });
 
-  const codeId = dcode.data.discount_code.id;
+  const codeId = codeRes.data.discount_code.id;
 
-  // 6) Store offer in DB
+  // 6) Save in DB
   const expiresAt = new Date(now.getTime() + 15 * 60000);
 
   await pool.query(
