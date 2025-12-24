@@ -1,66 +1,88 @@
 const pool = require("./db");
+const axios = require("axios");
 
-async function offer(product_id, user_id) {
+async function offer(pid, user) {
+  const now = new Date();
 
-  // Track user events
-  const views = await pool.query(
-    "SELECT COUNT(*) FROM views WHERE user_id=$1 AND product_id=$2",
-    [user_id, product_id]
+  // 1) Check if existing valid offer exists
+  const existing = await pool.query(
+    "SELECT * FROM offers_generated WHERE user_id=$1 AND product_id=$2 ORDER BY created_at DESC LIMIT 1",
+    [user, pid]
   );
-  const viewCount = parseInt(views.rows[0].count, 10);
 
-  const product = await pool.query(
-    "SELECT price, has_offer, discount, popularity FROM products WHERE id=$1",
-    [product_id]
+  if (existing.rows.length > 0) {
+    const o = existing.rows[0];
+
+    if (new Date(o.expires_at) > now) {
+      return {
+        offer: true,
+        discount: o.discount + "%",
+        code: o.code,
+        expires_in: Math.floor((new Date(o.expires_at) - now) / 1000),
+        saved: null
+      };
+    }
+  }
+
+  // 2) Fetch product price
+  const prod = await pool.query("SELECT price FROM products WHERE id=$1", [pid]);
+  const price = parseInt(prod.rows[0].price);
+
+  // 3) AI logic → Calculate discount
+  let discount = 30; // can put your AI logic here
+
+  // 4) Generate unique code
+  const code = `ANXSUS${Math.floor(Math.random() * 999999)}`;
+
+  // 5) Create coupon in Shopify
+  const api = axios.create({
+  baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}`,
+  headers: {
+    "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_PASSWORD,
+    "Content-Type": "application/json"
+  }
+});
+
+
+  // Price rule
+  const rule = await api.post("/price_rules.json", {
+    price_rule: {
+      title: code,
+      value_type: "percent",
+      value: `-${discount}`,
+      customer_selection: "all",
+      target_type: "line_item",
+      target_selection: "all",
+      allocation_method: "across",
+      starts_at: now.toISOString(),
+      ends_at: new Date(now.getTime() + 15 * 60000).toISOString()
+    }
+  });
+
+  const ruleId = rule.data.price_rule.id;
+
+  // Discount code
+  const dcode = await api.post(`/price_rules/${ruleId}/discount_codes.json`, {
+    discount_code: { code }
+  });
+
+  const codeId = dcode.data.discount_code.id;
+
+  // 6) Store offer in DB
+  const expiresAt = new Date(now.getTime() + 15 * 60000);
+
+  await pool.query(
+    `INSERT INTO offers_generated(user_id, product_id, discount, code, shopify_rule_id, shopify_code_id, expires_at)
+     VALUES($1,$2,$3,$4,$5,$6,$7)`,
+    [user, pid, discount, code, ruleId, codeId, expiresAt]
   );
-  if (product.rows.length === 0) {
-    return { offer: false, discount: "0%" };
-  }
-
-  const item = product.rows[0];
-
-  let finalDiscount = 0;
-
-  // 1. Base Offer
-  if (item.has_offer) {
-    finalDiscount = item.discount;
-  }
-
-  // 2. New user
-  if (viewCount === 1) {
-    finalDiscount = Math.max(finalDiscount, 20);
-  }
-
-  // 3. High interest user
-  if (viewCount >= 3) {
-    finalDiscount = Math.max(finalDiscount, 30);
-  }
-
-  // 4. Low popularity item
-  if (item.popularity < 20) {
-    finalDiscount = Math.max(finalDiscount, 35);
-  }
-
-  // 5. Loyalty bonus
-  const userViews = await pool.query(
-    "SELECT COUNT(*) FROM views WHERE user_id=$1",
-    [user_id]
-  );
-  if (userViews.rows[0].count > 10) {
-    finalDiscount += 5;
-  }
-
-  // 6. Never exceed 50%
-  finalDiscount = Math.min(finalDiscount, 50);
-
-  // Build Shopify discount code
-  const code = `AI${finalDiscount}OFF`;
 
   return {
-    offer: finalDiscount > 0,
-    discount: finalDiscount + "%",
+    offer: true,
+    discount: discount + "%",
     code,
-    saved: Math.round((item.price * finalDiscount) / 100)
+    expires_in: 15 * 60,
+    saved: Math.round((price * discount) / 100)
   };
 }
 
