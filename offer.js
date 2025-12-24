@@ -61,35 +61,33 @@ async function offer(product_id, user_id) {
     DYNAMIC DISCOUNT
   ------------------- */
 
-  let discount = product.discount || 0;
+ let discount = product.discount || 0;
 
-  // First time user
-  if (productViews === 1) discount = Math.max(discount, 15);
+// First time user
+if (productViews === 1) discount = Math.max(discount, 15);
 
-  // High intent
-  if (productViews >= 3) discount = Math.max(discount, 25);
+// High intent
+if (productViews >= 3) discount = Math.max(discount, 25);
 
-  // Cart abandoner
-  if (cartCheck.rows[0].count > 0) discount = Math.max(discount, 35);
+// Cart abandoner
+if (cartCheck.rows[0].count > 0) discount = Math.max(discount, 35);
 
-  // Low popularity stock
-  if (product.popularity < 20) discount = Math.max(discount, 30);
+// Low popularity stock
+if (product.popularity < 20) discount = Math.max(discount, 30);
 
-  // AI lowering discount for high-score users
-  if (score > 80) discount = Math.min(discount, 20);
+// AI lowering discount for high-score users
+if (score > 80) discount = Math.min(discount, 20);
 
-  // Safety cap
-  discount = Math.min(discount, 50);
+// Cap
+discount = Math.min(discount, 50);
 
-  const code = `AI${discount}OFF-${user_id}`;
+// 🟢 CLEAN CODE WITHOUT USER ID
+const code = `AI${discount}OFF`;
 
-  return {
+return {
     offer: discount > 0,
     discount: discount + "%",
     code,
     score,
     saved: Math.round(product.price * discount / 100)
-  };
-}
-
-module.exports = offer;
+};
