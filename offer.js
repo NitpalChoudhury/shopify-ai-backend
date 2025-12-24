@@ -36,7 +36,7 @@ async function offer(pid, user) {
 
   // 5) Create coupon in Shopify
   const api = axios.create({
-  baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}`,
+  baseURL: `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/${process.env.SHOPIFY_API_VERSION}/`,
   headers: {
     "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_PASSWORD,
     "Content-Type": "application/json"
