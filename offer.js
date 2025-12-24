@@ -3,7 +3,7 @@ const pool = require("./db");
 async function offer(product_id, user_id) {
 
   const result = await pool.query(
-    "SELECT has_offer, discount FROM products WHERE id=$1",
+    'SELECT has_offer, discount FROM offers WHERE id=$1',
     [product_id]
   );
 
@@ -13,7 +13,7 @@ async function offer(product_id, user_id) {
 
   const data = result.rows[0];
 
-  if (data.has_offer) {
+  if (data.has_offer === true) {
     return { offer: true, discount: data.discount + "%" };
   }
 
